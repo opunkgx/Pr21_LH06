@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tabel Penghasilan Sawit</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f9;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      background: #fff;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      text-align: center;
+      padding: 6px;
+    }
+    th {
+      background: #4CAF50;
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    input {
+      width: 60px;
+      padding: 4px;
+      text-align: right;
+    }
+    .total-row {
+      font-weight: bold;
+      background: #eafbea;
+    }
+    .total-col {
+      font-weight: bold;
+      background: #f1f1f1;
+    }
+    .btn-container {
+      text-align:center;
+      margin-top: 15px;
+    }
+    button, a.whatsapp-btn {
+      margin: 10px 5px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      background: #4CAF50;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    button:hover, a.whatsapp-btn:hover {
+      background: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h2>Tabel Penghasilan Sawit (1 Bulan, 12 Orang)</h2>
+  <div style="overflow-x:auto;">
+    <table id="sawitTable">
+      <thead>
+        <tr>
+          <th>Tanggal</th>
+          <th>Orang 1</th>
+          <th>Orang 2</th>
+          <th>Orang 3</th>
+          <th>Orang 4</th>
+          <th>Orang 5</th>
+          <th>Orang 6</th>
+          <th>Orang 7</th>
+          <th>Orang 8</th>
+          <th>Orang 9</th>
+          <th>Orang 10</th>
+          <th>Orang 11</th>
+          <th>Orang 12</th>
+          <th>Total/Hari</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td>Total/Orang</td>
+          <td class="colTotal">0</td>
+          <td class="colTotal">0</td>
+          <td class="colTotal">0</td>
+          <td class="colTotal">0</td>
+          <td class="colTotal">0</td>
+          <td class="colTotal">0</td>
+          <td class="colTotal">0</td>
+          <td class="colTotal">0</td>
+          <td class="colTotal">0</td>
+          <td class="colTotal">0</td>
+          <td class="colTotal">0</td>
+          <td class="colTotal">0</td>
+          <td id="grandTotal">0</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="btn-container">
+    <button onclick="requestSave()">💾 Simpan Data</button>
+    <button onclick="requestDelete()">🗑 Hapus Data</button>
+    <a class="whatsapp-btn" href="https://wa.me/601141340245" target="_blank">📲 Hubungi Admin via WhatsApp</a>
+  </div>
+
+  <script>
+    const ADMIN_CODE = "opunkGX"; // kode rahasia dari admin
+    const tableBody = document.getElementById("tableBody");
+
+    // Buat 31 baris (tanggal)
+    for (let i = 1; i <= 31; i++) {
+      let row = document.createElement("tr");
+
+      let tdTanggal = document.createElement("td");
+      tdTanggal.textContent = i;
+      row.appendChild(tdTanggal);
+
+      for (let j = 1; j <= 12; j++) {
+        let td = document.createElement("td");
+        let input = document.createElement("input");
+        input.type = "number";
+        input.min = 0;
+        input.dataset.row = i;
+        input.dataset.col = j;
+        input.oninput = () => hitungTotal();
+        td.appendChild(input);
+        row.appendChild(td);
+      }
+
+      let tdTotal = document.createElement("td");
+      tdTotal.textContent = "0";
+      tdTotal.className = "rowTotal";
+      row.appendChild(tdTotal);
+
+      tableBody.appendChild(row);
+    }
+
+    // Hitung total
+    function hitungTotal() {
+      let rows = tableBody.querySelectorAll("tr");
+      let colTotals = Array(12).fill(0);
+      let grandTotal = 0;
+
+      rows.forEach(row => {
+        let inputs = row.querySelectorAll("input");
+        let rowTotal = 0;
+        inputs.forEach((input, idx) => {
+          let val = parseFloat(input.value) || 0;
+          rowTotal += val;
+          colTotals[idx] += val;
+        });
+        row.querySelector(".rowTotal").textContent = rowTotal.toLocaleString();
+        grandTotal += rowTotal;
+      });
+
+      let colTotalCells = document.querySelectorAll(".colTotal");
+      colTotals.forEach((total, idx) => {
+        colTotalCells[idx].textContent = total.toLocaleString();
+      });
+
+      document.getElementById("grandTotal").textContent = grandTotal.toLocaleString();
+    }
+
+    // Simpan data (dengan kode admin)
+    function requestSave() {
+      alert("⚠️ Untuk menyimpan data, silakan hubungi admin di WhatsApp: +60 11-4134 0245");
+      let kode = prompt("Masukkan kode admin untuk simpan data:");
+      if (kode === ADMIN_CODE) {
+        saveData();
+      } else if (kode) {
+        alert("❌ Kode salah. Silakan hubungi admin untuk mendapatkan kode yang benar.");
+      }
+    }
+
+    function saveData() {
+      let inputs = document.querySelectorAll("input");
+      let data = {};
+      inputs.forEach(input => {
+        let key = `r${input.dataset.row}c${input.dataset.col}`;
+        data[key] = input.value;
+      });
+      localStorage.setItem("sawitData", JSON.stringify(data));
+      alert("✅ Data berhasil disimpan!");
+    }
+
+    function loadData() {
+      let saved = localStorage.getItem("sawitData");
+      if (saved) {
+        let data = JSON.parse(saved);
+        let inputs = document.querySelectorAll("input");
+        inputs.forEach(input => {
+          let key = `r${input.dataset.row}c${input.dataset.col}`;
+          if (data[key] !== undefined) {
+            input.value = data[key];
+          }
+        });
+        hitungTotal();
+      }
+    }
+
+    // Hapus data (dengan kode admin)
+    function requestDelete() {
+      alert("⚠️ Untuk menghapus data, silakan hubungi admin di WhatsApp: +60 11-4134 0245");
+      let kode = prompt("Masukkan kode admin untuk hapus data:");
+      if (kode === ADMIN_CODE) {
+        if (confirm("Apakah Anda yakin ingin menghapus semua data?")) {
+          localStorage.removeItem("sawitData");
+          document.querySelectorAll("input").forEach(input => input.value = "");
+          hitungTotal();
+          alert("🗑 Semua data telah dihapus.");
+        }
+      } else if (kode) {
+        alert("❌ Kode salah. Silakan hubungi admin untuk mendapatkan kode yang benar.");
+      }
+    }
+
+    // Load data saat halaman dibuka
+    window.onload = loadData;
+  </script>
+</body>
+</html>
