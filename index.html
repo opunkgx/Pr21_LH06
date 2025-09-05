@@ -45,10 +45,14 @@
     .btn-container {
       text-align: center;
       margin-top: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px;
     }
     button, a.whatsapp-btn {
-      margin: 10px 5px;
-      padding: 10px 15px;
+      margin: 5px;
+      padding: 6px 10px;
       border: none;
       border-radius: 5px;
       background: #4CAF50;
@@ -57,48 +61,33 @@
       cursor: pointer;
       text-decoration: none;
       display: inline-block;
+      font-size: 12px;
     }
     button:hover, a.whatsapp-btn:hover {
       background: #45a049;
     }
-
+    .note {
+      font-size: 7px;
+      color: #777;
+      margin-bottom: 8px;
+      font-style: italic;
+      width: 100%;
+      text-align: center;
+    }
     /* Responsif untuk HP */
     @media screen and (max-width: 768px) {
-      h2 {
-        font-size: 16px;
-      }
-      table {
-        font-size: 12px;
-      }
-      input {
-        width: 50px;
-        font-size: 12px;
-      }
-      th, td {
-        padding: 4px;
-      }
-      .btn-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      button, a.whatsapp-btn {
-        width: 100%;
-        max-width: 250px;
-      }
+      h2 { font-size: 16px; }
+      table { font-size: 12px; }
+      input { width: 50px; font-size: 12px; }
+      th, td { padding: 4px; }
+      .btn-container { flex-direction: column; align-items: center; }
+      button, a.whatsapp-btn { width: 100%; max-width: 250px; }
     }
-
     /* Tampilan lebih lega di Desktop */
     @media screen and (min-width: 1024px) {
-      h2 {
-        font-size: 24px;
-      }
-      table {
-        font-size: 15px;
-      }
-      input {
-        width: 80px;
-      }
+      h2 { font-size: 24px; }
+      table { font-size: 15px; }
+      input { width: 80px; }
     }
   </style>
 </head>
@@ -107,7 +96,7 @@
   <div style="overflow-x:auto;">
     <table id="tabelSawit">
       <thead>
-        <tr>
+        <tr id="headerRow">
           <th>Tanggal</th>
           <th>Asroful</th>
           <th>Jumahir</th>
@@ -117,14 +106,14 @@
           <th>Selamet</th>
           <th>Dhali</th>
           <th>Zul azmi</th>
-          <th>pojol</th>
-          <th>rosid</th>
+          <th>Pojol</th>
+          <th>Rosid</th>
           <th>Total/Hari</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
       <tfoot>
-        <tr>
+        <tr id="footerRow">
           <td>Total/Orang</td>
           <td class="colTotal"></td>
           <td class="colTotal"></td>
@@ -145,13 +134,21 @@
   <div class="btn-container">
     <button onclick="requestSave()">💾 Simpan Data</button>
     <button onclick="requestDelete()">🗑 Hapus Data</button>
+    <button onclick="addColumn()">➕ Tambah Kolom</button>
+    <button onclick="deleteColumn()">➖ Hapus Kolom</button>
+    <button onclick="exportTableToExcel()">⬇️ Export ke Excel</button>
     <a class="whatsapp-btn" href="https://wa.me/601141340245" target="_blank">📲 Hubungi Admin via WhatsApp</a>
+    <div class="note">⚠️ Data hanya tersimpan di browser, refresh akan tetap menyimpan jika sudah klik Simpan.</div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
-    const ADMIN_CODE = "opunkGX"; 
+    const ADMIN_CODE = "opunkGX";
     const tableBody = document.getElementById("tableBody");
+    const headerRow = document.getElementById("headerRow");
+    const footerRow = document.getElementById("footerRow");
 
+    // buat 31 baris
     for (let i = 1; i <= 31; i++) {
       const row = document.createElement("tr");
 
@@ -159,40 +156,26 @@
       hariCell.textContent = " " + i;
       row.appendChild(hariCell);
 
-      // hanya 10 orang
       for (let j = 0; j < 10; j++) {
         const td = document.createElement("td");
         const input = document.createElement("input");
-        input.type = "number";
-        input.step = "any";
-        input.dataset.row = i;
-        input.dataset.col = j;
-        input.oninput = () => hitungTotal();
+        input.type = "number"; input.step = "any"; input.dataset.row = i; input.dataset.col = j;
+        input.oninput = hitungTotal;
         td.appendChild(input);
         row.appendChild(td);
       }
 
       const totalCell = document.createElement("td");
       const totalInput = document.createElement("input");
-      totalInput.type = "number";
-      totalInput.step = "any";
-      totalInput.classList.add("rowTotal");
-      totalInput.dataset.row = i;
-
+      totalInput.type = "number"; totalInput.step = "any"; totalInput.classList.add("rowTotal"); totalInput.dataset.row = i;
       totalInput.oninput = () => {
         const total = parseFloat(totalInput.value);
         if (isNaN(total)) return;
-
         const inputs = row.querySelectorAll("td input:not(.rowTotal)");
-        const perOrang = (total / 10).toFixed(2);
-
-        inputs.forEach(inp => {
-          inp.value = perOrang;
-        });
-
+        const perOrang = (total / inputs.length).toFixed(2);
+        inputs.forEach(inp => inp.value = perOrang);
         hitungTotal();
       };
-
       totalCell.appendChild(totalInput);
       row.appendChild(totalCell);
 
@@ -201,87 +184,104 @@
 
     function hitungTotal() {
       const rows = tableBody.querySelectorAll("tr");
-      const colTotals = Array(10).fill(0);
+      const colCount = headerRow.querySelectorAll("th").length - 2;
+      const colTotals = Array(colCount).fill(0);
       let grandTotal = 0;
 
       rows.forEach(row => {
         const inputs = row.querySelectorAll("td input:not(.rowTotal)");
         let rowTotal = 0;
-
         inputs.forEach((inp, idx) => {
           const val = parseFloat(inp.value);
-          if (!isNaN(val)) {
-            colTotals[idx] += val;
-            rowTotal += val;
-            inp.value = parseFloat(val).toFixed(2);
-          }
+          if (!isNaN(val)) { colTotals[idx] += val; rowTotal += val; inp.value = val.toFixed(2); }
         });
-
         const totalInput = row.querySelector(".rowTotal");
-        if (totalInput && document.activeElement !== totalInput) {
-          totalInput.value = rowTotal ? rowTotal.toFixed(2) : "";
-        }
-
+        if (totalInput && document.activeElement !== totalInput) totalInput.value = rowTotal.toFixed(2);
         grandTotal += rowTotal;
       });
 
-      const colTotalCells = document.querySelectorAll(".colTotal");
-      colTotals.forEach((total, idx) => {
-        colTotalCells[idx].textContent = total ? total.toFixed(2) : "";
+      const colTotalCells = footerRow.querySelectorAll(".colTotal");
+      colTotalCells.forEach((cell, idx) => {
+        cell.textContent = colTotals[idx] ? colTotals[idx].toFixed(2) : "";
       });
-
       document.getElementById("grandTotal").textContent = grandTotal.toFixed(2);
     }
 
-    function requestSave() {
-      alert("⚠️ Mun mele simpen jk, endeng kode admin jluk lk WA ne: +60 11-4134 0245");
-      const kode = prompt("Masukkan kode admin untuk simpan data:");
-      if (kode === ADMIN_CODE) {
-        saveData();
-      } else if (kode) {
-        alert("❌ Hhhh salak kodem tye polokkkk.");
-      }
-    }
-
+    // simpan/load data
     function saveData() {
-      const inputs = document.querySelectorAll("input");
       const data = {};
-      inputs.forEach(input => {
+      document.querySelectorAll("input").forEach(input => {
         const key = `r${input.dataset.row || "x"}c${input.dataset.col || "total"}`;
         data[key] = input.value;
       });
       localStorage.setItem("sawitData", JSON.stringify(data));
-      alert("✅ Aok aneh wh tersimpen selapukn");
+      alert("✅ Data berhasil disimpan!");
     }
-
     function loadData() {
       const saved = localStorage.getItem("sawitData");
       if (saved) {
         const data = JSON.parse(saved);
-        const inputs = document.querySelectorAll("input");
-        inputs.forEach(input => {
+        document.querySelectorAll("input").forEach(input => {
           const key = `r${input.dataset.row || "x"}c${input.dataset.col || "total"}`;
-          if (data[key] !== undefined) {
-            input.value = parseFloat(data[key]).toFixed(2);
-          }
+          if (data[key] !== undefined) input.value = data[key];
         });
         hitungTotal();
       }
     }
-
+    function requestSave() {
+      const kode = prompt("Masukkan kode admin untuk simpan data:");
+      if (kode === ADMIN_CODE) saveData();
+      else if (kode) alert("❌ Kode salah!");
+    }
     function requestDelete() {
-      alert("⚠️ Mun mele hapusn jk, endeng kode admin jluk lk WA ne: +60 11-4134 0245");
       const kode = prompt("Masukkan kode admin untuk hapus data:");
       if (kode === ADMIN_CODE) {
-        if (confirm("Selapuk data yk te hapus, tetum tye?")) {
+        if (confirm("Yakin hapus semua data?")) {
           localStorage.removeItem("sawitData");
-          document.querySelectorAll("input").forEach(input => input.value = "");
+          document.querySelectorAll("input").forEach(input => input.value="");
           hitungTotal();
-          alert("🗑 Aok aneh wh k hapus slapukn.");
+          alert("🗑 Semua data telah dihapus!");
         }
-      } else if (kode) {
-        alert("❌ Hhh salak kodem tye polokk, hubungi admin jlk to.");
-      }
+      } else if(kode) alert("❌ Kode salah!");
+    }
+
+    // tambah/hapus kolom
+    function addColumn() {
+      const name = prompt("Masukkan nama kolom baru:");
+      if(!name) return alert("❌ Nama kolom tidak boleh kosong.");
+      const th = document.createElement("th"); th.textContent = name;
+      headerRow.insertBefore(th, headerRow.lastElementChild);
+
+      const tdTotals = footerRow.querySelectorAll(".colTotal");
+      const tdNew = document.createElement("td"); tdNew.classList.add("colTotal");
+      footerRow.insertBefore(tdNew, footerRow.lastElementChild);
+
+      const rows = tableBody.querySelectorAll("tr");
+      rows.forEach((row, idx) => {
+        const td = document.createElement("td");
+        const input = document.createElement("input"); input.type="number"; input.step="any"; input.dataset.row=idx+1; input.dataset.col=headerRow.querySelectorAll("th").length-2; input.oninput=hitungTotal;
+        td.appendChild(input);
+        row.insertBefore(td, row.lastElementChild);
+      });
+      alert("✅ Kolom '" + name + "' berhasil ditambahkan!");
+      hitungTotal();
+    }
+    function deleteColumn() {
+      const ths = headerRow.querySelectorAll("th");
+      if(ths.length <= 2) return alert("❌ Tidak bisa hapus kolom tersisa!");
+      const colIdx = ths.length - 2;
+
+      headerRow.removeChild(ths[colIdx]);
+      footerRow.removeChild(footerRow.querySelectorAll("td")[colIdx]);
+      tableBody.querySelectorAll("tr").forEach(row => row.removeChild(row.querySelectorAll("td")[colIdx]));
+      alert("🗑 Kolom terakhir berhasil dihapus!");
+      hitungTotal();
+    }
+
+    // export ke excel
+    function exportTableToExcel() {
+      const wb = XLSX.utils.table_to_book(document.getElementById("tabelSawit"), {sheet:"Sheet1"});
+      XLSX.writeFile(wb, "Tabel_Penghasilan_Sawit.xlsx");
     }
 
     window.onload = loadData;
