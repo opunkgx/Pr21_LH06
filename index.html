@@ -234,12 +234,12 @@
     }
 
     function requestSave() {
-      alert("⚠️ Untuk menyimpan data, silakan hubungi admin di WhatsApp: +60 11-4134 0245");
+      alert("⚠️ Mun mele simpen jk, endeng kode admin jluk lk WA ne: +60 11-4134 0245");
       const kode = prompt("Masukkan kode admin untuk simpan data:");
       if (kode === ADMIN_CODE) {
         saveData();
       } else if (kode) {
-        alert("❌ Kode salah. Silakan hubungi admin.");
+        alert("❌ Hhhh salak kodem tye polokkkk.");
       }
     }
 
@@ -251,7 +251,7 @@
         data[key] = input.value;
       });
       localStorage.setItem("sawitData", JSON.stringify(data));
-      alert("✅ Data berhasil disimpan!");
+      alert("✅ Aok aneh wh tersimpen selapukn");
     }
 
     function loadData() {
@@ -270,17 +270,17 @@
     }
 
     function requestDelete() {
-      alert("⚠️ Untuk menghapus data, silakan hubungi admin di WhatsApp: +60 11-4134 0245");
+      alert("⚠️ Mun mele hapusn jk, endeng kode admin jluk lk WA ne: +60 11-4134 0245");
       const kode = prompt("Masukkan kode admin untuk hapus data:");
       if (kode === ADMIN_CODE) {
-        if (confirm("Apakah Anda yakin ingin menghapus semua data?")) {
+        if (confirm("Selapuk data yk te hapus, tetum tye?")) {
           localStorage.removeItem("sawitData");
           document.querySelectorAll("input").forEach(input => input.value = "");
           hitungTotal();
           alert("🗑 Semua data telah dihapus.");
         }
       } else if (kode) {
-        alert("❌ Kode salah. Silakan hubungi admin.");
+        alert("❌ Hhh salak kodem tye polokk, hubungi admin jlk to.");
       }
     }
 
